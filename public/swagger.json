@@ -1,0 +1,49 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Açaí do Vale API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/produtos": {
+      "get": {
+        "summary": "Lista todos os produtos",
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          }
+        }
+      }
+    },
+    "/clientes": {
+      "get": {
+        "summary": "Lista todos os clientes",
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          }
+        }
+      }
+    },
+    "/funcionarios": {
+      "get": {
+        "summary": "Lista todos os funcionários",
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          }
+        }
+      }
+    },
+    "/vendas": {
+      "get": {
+        "summary": "Lista todas as vendas",
+        "responses": {
+          "200": {
+            "description": "Sucesso"
+          }
+        }
+      }
+    }
+  }
+}

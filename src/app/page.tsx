@@ -1,103 +1,151 @@
-import Image from "next/image";
+'use client';
+import dynamic from 'next/dynamic';
+import { useState } from 'react';
+import styled from 'styled-components';
+import 'swagger-ui-react/swagger-ui.css';
 
-export default function Home() {
+const Container = styled.main`
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+`;
+
+const Title = styled.h2`
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #3b0a45;
+`;
+
+const SwaggerWrapper = styled.div`
+  min-height: 600px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1rem;
+`;
+
+const SqlBlock = styled.pre`
+  background: #eee;
+  padding: 1rem;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  border-radius: 8px;
+  margin-top: 2rem;
+  overflow-x: auto;
+`;
+
+const Button = styled.button`
+  background-color: #3b0a45;
+  color: white;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 2rem;
+
+  &:hover:not(:disabled) {
+    background-color: #5a0d65;
+  }
+
+  &:disabled {
+    background-color: #7a537d;
+    cursor: not-allowed;
+  }
+`;
+
+const SqlScript = `CREATE TABLE Cliente (
+    cod_cliente INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Funcionario (
+    cod_funcionario INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Produto (
+    cod_produto INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) NOT NULL,
+    tipo ENUM('principal', 'secundario') NOT NULL,
+    preco_custo DECIMAL(10,2),
+    preco_venda DECIMAL(10,2)
+);
+
+CREATE TABLE Estoque (
+    cod_estoque INT PRIMARY KEY AUTO_INCREMENT,
+    cod_produto INT NOT NULL,
+    tipo ENUM('estoque', 'freezer') NOT NULL,
+    quantidade DECIMAL(10,2) NOT NULL DEFAULT 0,
+    FOREIGN KEY (cod_produto) REFERENCES Produto(cod_produto)
+);
+
+CREATE TABLE Venda (
+    cod_venda INT PRIMARY KEY AUTO_INCREMENT,
+    data DATE NOT NULL,
+    hora TIME NOT NULL,
+    valor_total DECIMAL(10,2),
+    cod_cliente INT NOT NULL,
+    cod_funcionario INT NOT NULL,
+    FOREIGN KEY (cod_cliente) REFERENCES Cliente(cod_cliente),
+    FOREIGN KEY (cod_funcionario) REFERENCES Funcionario(cod_funcionario)
+);
+
+CREATE TABLE Venda_Produto (
+    cod_venda INT,
+    cod_produto INT,
+    quantidade DECIMAL(10,2),
+    preco_vendido DECIMAL(10,2),
+    PRIMARY KEY (cod_venda, cod_produto),
+    FOREIGN KEY (cod_venda) REFERENCES Venda(cod_venda),
+    FOREIGN KEY (cod_produto) REFERENCES Produto(cod_produto)
+);
+`;
+
+const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false });
+
+export default function SwaggerPage() {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function handleCreateTables() {
+    setLoading(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/create-tables', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(data.message || 'Tabelas criadas com sucesso!');
+      } else {
+        setMessage(data.error || 'Erro ao criar tabelas');
+      }
+    } catch {
+      setMessage('Erro ao criar tabelas');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <Container>
+      <Title>Documentação Swagger</Title>
+      <SwaggerWrapper>
+        <SwaggerUI url="/swagger.json" />
+      </SwaggerWrapper>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      <Button onClick={handleCreateTables} disabled={loading}>
+        {loading ? 'Criando tabelas...' : 'Criar Tabelas no Banco'}
+      </Button>
+
+      {message && <p>{message}</p>}
+
+      <Title>Script SQL para criação das tabelas</Title>
+      <SqlBlock>{SqlScript}</SqlBlock>
+
+      <Title>Visualização do Diagrama</Title>
+      <p>
+        Use o Adminer (<a href="http://localhost:8080" target="_blank" rel="noopener noreferrer">http://localhost:8080</a>) para explorar as tabelas e relacionamentos.<br />
+        Para diagramas ER completos, utilize ferramentas como MySQL Workbench ou DBeaver que conectam ao seu banco e geram os diagramas automaticamente.
+      </p>
+    </Container>
   );
 }
