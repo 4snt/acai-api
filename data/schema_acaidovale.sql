@@ -1,18 +1,3 @@
-SET FOREIGN_KEY_CHECKS = 0;
-
-DROP TABLE IF EXISTS Venda_ProdutoSecundario;
-DROP TABLE IF EXISTS Venda_ProdutoPrincipal;
-DROP TABLE IF EXISTS Venda;
-DROP TABLE IF EXISTS Funcionario;
-DROP TABLE IF EXISTS Cliente;
-DROP TABLE IF EXISTS EstoqueProdutoSecundario;
-DROP TABLE IF EXISTS EstoqueProdutoPrincipal;
-DROP TABLE IF EXISTS ProdutoSecundario;
-DROP TABLE IF EXISTS ProdutoPrincipal;
-DROP TABLE IF EXISTS Freezer_Produto;
-DROP TABLE IF EXISTS Freezer;
-
-SET FOREIGN_KEY_CHECKS = 1;
 CREATE TABLE Cliente (
     cod_cliente INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100) NOT NULL
