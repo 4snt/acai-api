@@ -2,9 +2,21 @@ import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 // Listar todos os clientes
-export async function GET() {
-  const [rows] = await db.query(`SELECT cod_cliente, nome FROM Cliente`);
-  return NextResponse.json(rows);
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const filtros = searchParams.get('filtros') || '';
+
+  const sql = `
+SELECT cod_cliente, nome FROM Cliente
+WHERE nome LIKE '%${filtros}%'
+`.trim();
+
+  const [rows] = await db.query(
+    `SELECT cod_cliente, nome FROM Cliente WHERE nome LIKE ?`,
+    [`%${filtros}%`]
+  );
+
+  return NextResponse.json({ data: rows, sql });
 }
 
 // Criar um novo cliente

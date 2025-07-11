@@ -3,10 +3,44 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
-const Container = styled.main`
+const Wrapper = styled.div`
+  display: flex;
+  gap: 2rem;
   padding: 2rem;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
+`;
+
+const Sidebar = styled.aside`
+  width: 300px;
+  flex-shrink: 0;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 1rem;
+  border-radius: 6px;
+  height: fit-content;
+  position: sticky;
+  top: 2rem;
+
+  h3 {
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+    color: #2e3a59;
+  }
+`;
+
+const SqlBlock = styled.pre`
+  background: #f1f1f1;
+  padding: 1rem;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  border-radius: 5px;
+  max-height: 400px;
+  overflow-y: auto;
+`;
+
+const MainContent = styled.main`
+  flex: 1;
 `;
 
 const Title = styled.h1`
@@ -67,20 +101,10 @@ const ProductList = styled.ul`
   }
 `;
 
-const SqlBlock = styled.pre`
-  background: #f1f1f1;
-  padding: 1rem;
-  font-size: 0.9rem;
-  white-space: pre-wrap;
-  border-radius: 5px;
-  margin-top: 1rem;
-`;
-
 export default function VendasPage() {
   const [clientes, setClientes] = useState<any[]>([]);
   const [funcionarios, setFuncionarios] = useState<any[]>([]);
   const [produtos, setProdutos] = useState<any[]>([]);
-
   const [venda, setVenda] = useState({
     cod_cliente: '',
     cod_funcionario: '',
@@ -88,20 +112,31 @@ export default function VendasPage() {
     quantidade: '',
     preco: '',
   });
-
   const [itens, setItens] = useState<any[]>([]);
   const [lastSql, setLastSql] = useState('');
   const [loading, setLoading] = useState(false);
+  const [relatorio, setRelatorio] = useState<any>(null);
 
   useEffect(() => {
-    fetch('/api/clientes').then(r => r.json()).then(setClientes);
-    fetch('/api/funcionarios').then(r => r.json()).then(setFuncionarios);
-    fetch('/api/produtos').then(r => r.json()).then(setProdutos);
+    fetch('/api/clientes')
+      .then(r => r.json())
+      .then(data => setClientes(Array.isArray(data) ? data : data.data ?? []));
+
+    fetch('/api/funcionarios')
+      .then(r => r.json())
+      .then(data => setFuncionarios(Array.isArray(data) ? data : data.data ?? []));
+
+    fetch('/api/produtos')
+      .then(r => r.json())
+      .then(data => setProdutos(Array.isArray(data) ? data : data.produtos ?? []));
+
+    fetch('/api/relatorio-vendas')
+      .then(r => r.json())
+      .then(setRelatorio);
   }, []);
 
   function adicionarProduto() {
     const { produtoSelecionado, quantidade, preco } = venda;
-
     if (!produtoSelecionado || !quantidade || !preco) return;
 
     const prod = produtos.find(p => p.cod_produto == produtoSelecionado);
@@ -150,92 +185,111 @@ export default function VendasPage() {
   const valorTotal = itens.reduce((acc, i) => acc + i.quantidade * i.preco_vendido, 0);
 
   return (
-    <Container>
-      <Title>Registrar Venda</Title>
+    <Wrapper>
+      <Sidebar>
+        <h3>Comando SQL</h3>
+        <SqlBlock>{lastSql || 'Nenhum comando executado ainda.'}</SqlBlock>
+      </Sidebar>
 
-      <Section>
-        <FormRow>
-          <select
-            value={venda.cod_cliente}
-            onChange={e => setVenda(v => ({ ...v, cod_cliente: e.target.value }))}
-            required
-          >
-            <option value="">Selecione o Cliente</option>
-            {clientes.map(c => (
-              <option key={c.cod_cliente} value={c.cod_cliente}>
-                #{c.cod_cliente} - {c.nome}
-              </option>
-            ))}
-          </select>
+      <MainContent>
+        <Title>Registrar Venda</Title>
 
-          <select
-            value={venda.cod_funcionario}
-            onChange={e => setVenda(v => ({ ...v, cod_funcionario: e.target.value }))}
-            required
-          >
-            <option value="">Selecione o Funcionário</option>
-            {funcionarios.map(f => (
-              <option key={f.cod_funcionario} value={f.cod_funcionario}>
-                #{f.cod_funcionario} - {f.nome}
-              </option>
-            ))}
-          </select>
-        </FormRow>
+        <Section>
+          <FormRow>
+            <select
+              value={venda.cod_cliente}
+              onChange={e => setVenda(v => ({ ...v, cod_cliente: e.target.value }))}
+              required
+            >
+              <option value="">Selecione o Cliente</option>
+              {clientes?.map(c => (
+                <option key={c.cod_cliente} value={c.cod_cliente}>
+                  #{c.cod_cliente} - {c.nome}
+                </option>
+              ))}
+            </select>
 
-        <FormRow>
-          <select
-            value={venda.produtoSelecionado}
-            onChange={e => setVenda(v => ({ ...v, produtoSelecionado: e.target.value }))}
-          >
-            <option value="">Selecione o Produto</option>
-            {produtos.map(p => (
-              <option key={p.cod_produto} value={p.cod_produto}>
-                #{p.cod_produto} - {p.nome}
-              </option>
-            ))}
-          </select>
+            <select
+              value={venda.cod_funcionario}
+              onChange={e => setVenda(v => ({ ...v, cod_funcionario: e.target.value }))}
+              required
+            >
+              <option value="">Selecione o Funcionário</option>
+              {funcionarios?.map(f => (
+                <option key={f.cod_funcionario} value={f.cod_funcionario}>
+                  #{f.cod_funcionario} - {f.nome}
+                </option>
+              ))}
+            </select>
+          </FormRow>
 
-          <input
-            type="number"
-            step="0.01"
-            placeholder="Quantidade"
-            value={venda.quantidade}
-            onChange={e => setVenda(v => ({ ...v, quantidade: e.target.value }))}
-          />
+          <FormRow>
+            <select
+              value={venda.produtoSelecionado}
+              onChange={e => setVenda(v => ({ ...v, produtoSelecionado: e.target.value }))}
+            >
+              <option value="">Selecione o Produto</option>
+              {produtos.map(p => (
+                <option key={p.cod_produto} value={p.cod_produto}>
+                  #{p.cod_produto} - {p.nome}
+                </option>
+              ))}
+            </select>
 
-          <input
-            type="number"
-            step="0.01"
-            placeholder="Preço vendido"
-            value={venda.preco}
-            onChange={e => setVenda(v => ({ ...v, preco: e.target.value }))}
-          />
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Quantidade"
+              value={venda.quantidade}
+              onChange={e => setVenda(v => ({ ...v, quantidade: e.target.value }))}
+            />
 
-          <button type="button" onClick={adicionarProduto}>Adicionar Produto</button>
-        </FormRow>
-      </Section>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Preço vendido"
+              value={venda.preco}
+              onChange={e => setVenda(v => ({ ...v, preco: e.target.value }))}
+            />
 
-      {itens.length > 0 && (
-        <>
-          <h3>Produtos da Venda</h3>
-          <ProductList>
-            {itens.map((item, index) => (
-              <li key={index}>
-                {item.nome} — {item.quantidade} × R${item.preco_vendido.toFixed(2)}
-              </li>
-            ))}
-          </ProductList>
+            <button type="button" onClick={adicionarProduto}>Adicionar Produto</button>
+          </FormRow>
+        </Section>
 
-          <p><strong>Total:</strong> R$ {valorTotal.toFixed(2)}</p>
+        {itens.length > 0 && (
+          <>
+            <h3>Produtos da Venda</h3>
+            <ProductList>
+              {itens.map((item, index) => (
+                <li key={index}>
+                  {item.nome} — {item.quantidade} × R${item.preco_vendido.toFixed(2)}
+                </li>
+              ))}
+            </ProductList>
 
-          <button onClick={finalizarVenda} disabled={loading}>
-            {loading ? 'Salvando...' : 'Finalizar Venda'}
-          </button>
-        </>
-      )}
+            <p><strong>Total:</strong> R$ {valorTotal.toFixed(2)}</p>
 
-      <h3>Comando SQL executado</h3>
-      <SqlBlock>{lastSql || 'Nenhum comando executado ainda.'}</SqlBlock>
-    </Container>
+            <button onClick={finalizarVenda} disabled={loading}>
+              {loading ? 'Salvando...' : 'Finalizar Venda'}
+            </button>
+          </>
+        )}
+
+        <h3>Relatório de Vendas</h3>
+        <Section>
+          {relatorio ? (
+            <>
+              <p><strong>Total de vendas:</strong> {relatorio.total_vendas}</p>
+              <p><strong>Valor total vendido:</strong> R$ {Number(relatorio.valor_total_vendido).toFixed(2)}</p>
+              <p><strong>Valor médio por venda:</strong> R$ {Number(relatorio.media_valor_venda).toFixed(2)}</p>
+              <p><strong>Produto mais vendido:</strong> {relatorio.produto_mais_vendido?.nome} ({relatorio.produto_mais_vendido?.total_vendida} un)</p>
+              <p><strong>Produto com maior receita:</strong> {relatorio.produto_maior_receita?.nome} (R$ {Number(relatorio.produto_maior_receita?.receita_total).toFixed(2)})</p>
+            </>
+          ) : (
+            <p>Carregando relatório...</p>
+          )}
+        </Section>
+      </MainContent>
+    </Wrapper>
   );
 }

@@ -30,13 +30,17 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   return NextResponse.json({ message: 'Cliente atualizado com sucesso', sql });
 }
 
-// Excluir um cliente
 export async function DELETE(_: Request, { params }: { params: { id: string } }) {
-  const id = Number(params.id);
+  try {
+    const id = Number(params.id);
+    await db.query(`DELETE FROM Cliente WHERE cod_cliente = ?`, [id]);
 
-  await db.query(`DELETE FROM Cliente WHERE cod_cliente = ?`, [id]);
-
-  const sql = `-- DELETE:\nDELETE FROM Cliente WHERE cod_cliente = ${id};`;
-
-  return NextResponse.json({ message: 'Cliente excluído com sucesso', sql });
+    return NextResponse.json({
+      message: 'Cliente removido',
+      sql: `-- DELETE:\nDELETE FROM Cliente WHERE cod_cliente = ${id};`,
+    });
+  } catch (err) {
+    console.error('Erro ao excluir cliente:', err);
+    return NextResponse.json({ error: 'Erro interno ao excluir cliente' }, { status: 500 });
+  }
 }

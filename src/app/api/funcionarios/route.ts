@@ -1,11 +1,39 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
-// Listar todos os funcionários
-export async function GET() {
-  const [rows] = await db.query(`SELECT cod_funcionario, nome FROM Funcionario`);
-  return NextResponse.json(rows);
+function formatSqlWithParams(sql: string, params: any[]) {
+  let i = 0;
+  return sql.replace(/\?/g, () => {
+    const val = params[i++];
+    if (typeof val === 'string') return `'${val}'`;
+    return val;
+  });
 }
+
+// Listar todos os funcionários
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const nome = searchParams.get('nome')?.toLowerCase() || '';
+
+  let sql = 'SELECT cod_funcionario, nome FROM Funcionario WHERE 1=1';
+  const params: any[] = [];
+
+  if (nome) {
+    sql += ` AND LOWER(nome) LIKE ?`;
+    params.push(`%${nome}%`);
+  }
+
+  const [rows] = await db.query(sql, params);
+
+  const demonstrativo = `
+-- SELECT:
+${sql.replace(/\?/g, (_, i) => `'${params[i] || ''}'`)}
+`.trim();
+
+  return NextResponse.json({ data: rows, sql: demonstrativo });
+}
+
+
 
 // Criar novo funcionário
 export async function POST(request: Request) {
